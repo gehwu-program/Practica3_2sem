@@ -1,0 +1,326 @@
+
+#include <iostream>
+#include <stack>
+#include <string>
+#include <cctype>
+#include <sstream>
+#include <conio.h>
+
+using namespace std;
+
+int precedence(char op) {
+    switch (op) {
+    case '+':
+    case '-':
+        return 1;
+    case '*':
+    case '/':
+        return 2;
+    default:
+        return -1;
+    }
+}
+
+bool isOperator(char c) {
+    return c == '+' || c == '-' || c == '*' || c == '/';
+}
+
+string toPostfix(const string& infix) {
+    stack<char> s;
+    string postfix;
+
+    for (size_t i = 0; i < infix.size(); ++i) {
+        char c = infix[i];
+
+        if (isspace(c))
+            continue;
+
+        if (isdigit(c)) {
+            postfix += c;
+            while (i + 1 < infix.size() && isdigit(infix[i + 1]))
+                postfix += infix[++i];
+            postfix += ' ';
+        }
+        else if (c == '(')
+            s.push(c);
+        else if (c == ')') {
+            while (!s.empty() && s.top() != '(') {
+                postfix += s.top();
+                postfix += ' ';
+                s.pop();
+            }
+            if (!s.empty())
+                s.pop();
+            else
+                return "Invalid input";
+        }
+        else if (precedence(c) > 0) {
+            while (!s.empty() && precedence(s.top()) >= precedence(c)) {
+                postfix += s.top();
+                postfix += ' ';
+                s.pop();
+            }
+            s.push(c);
+        }
+        else {
+            return "Invalid input";
+        }
+    }
+
+    while (!s.empty()) {
+        if (s.top() == '('  || s.top() == ')')
+            return "Invalid input";
+        postfix += s.top();
+        postfix += ' ';
+        s.pop();
+    }
+
+    return postfix;
+}
+
+std::string toPrefix(const std::string& infix) {
+    std::stack<char> operators;
+    std::string prefix;
+
+    for (int i = infix.size() - 1; i >= 0; i--) {
+        char current_char = infix[i];
+
+        if (current_char == ' ') {
+            continue;
+        }
+        if (isdigit(current_char)) {
+            prefix.insert(prefix.begin(), current_char);
+            prefix.insert(prefix.begin(), ' ');
+        }
+        else if (current_char == ')') {
+            operators.push(current_char);
+        }
+        else if (current_char == '(') {
+            while (!operators.empty() && operators.top() != ')') {
+                prefix.insert(prefix.begin(), operators.top());
+                prefix.insert(prefix.begin(), ' ');
+                operators.pop();
+            }
+            if (!operators.empty()) {
+                operators.pop();
+            }
+            else {
+                return "Invalid input";
+            }
+        }
+        else if (precedence(current_char) > 0) {
+            while (!operators.empty() && precedence(operators.top()) >= precedence(current_char)) {
+                prefix.insert(prefix.begin(), operators.top());
+                prefix.insert(prefix.begin(), ' ');
+                operators.pop();
+            }
+            operators.push(current_char);
+        }
+        else {
+            continue;
+        }
+    }
+
+
+    while (!operators.empty()) {
+        if (operators.top() == '(' || operators.top() == ')') {
+            return "Invalid input";
+        }
+        prefix.insert(prefix.begin(), operators.top());
+        prefix.insert(prefix.begin(), ' ');
+        operators.pop();
+    }
+
+    return prefix;
+}
+
+double calculatePostfix(const std::string& expression) {
+    std::stringstream ss(expression);
+    std::string token;
+    std::stack<double> stack;
+
+    while (ss >> token) {
+        if (isdigit(token[0]) || isalpha(token[0])) {
+            stack.push(std::stod(token));
+        }
+        else if (isOperator(token[0])) {
+            if (stack.size() < 2) {
+                return NULL;
+            }
+            double operand2 = stack.top(); stack.pop();
+            double operand1 = stack.top(); stack.pop();
+                switch (token[0]) {
+                case '+':
+                    stack.push(operand1 + operand2);
+                    break;
+                case '-':
+                    stack.push(operand1 - operand2);
+                    break;
+                case '*':
+                    stack.push(operand1 * operand2);
+                    break;
+                case '/':
+                    if (operand2 == 0) {
+                        return NULL;
+                    }
+                    stack.push(operand1 / operand2);
+                    break;
+                default:
+                    return NULL;
+                }
+        }
+        else {
+            return NULL;
+        }
+    }
+
+    if (stack.size() != 1) {
+        return NULL;
+    }
+
+    return stack.top();
+}
+
+double calculatePrefix(const std::string& expression) {
+    std::stringstream ss(expression);
+    std::string token;
+    std::stack<double> stack;
+
+    while (ss >> token) {
+        if (isdigit(token[0]) || isalpha(token[0])) {
+            stack.push(std::stod(token));
+        }
+        else if (isOperator(token[0])) {
+            if (stack.size() < 2) {
+                return NULL;
+            }
+            double operand2 = stack.top(); stack.pop();
+            double operand1 = stack.top(); stack.pop();
+
+            switch (token[0]) {
+            case '+':
+                stack.push(operand1 + operand2);
+                break;
+            case '-':
+                stack.push(operand1 - operand2);
+                break;
+            case '*':
+                stack.push(operand1 * operand2);
+                break;
+            case '/':
+                if (operand2 == 0) {
+                    return NULL;
+                }
+                stack.push(operand1 / operand2);
+                break;
+            default:
+                return NULL;
+            }
+        }
+        else {
+            return NULL;
+        }
+    }
+
+    if (stack.size() != 1) {
+        return NULL;
+    }
+
+    return stack.top();
+}
+
+int main() {
+    setlocale(LC_ALL, "RU");
+    string expression;
+    int choice;
+    do {
+        system("cls");
+        cout << "1)Трансформировать выражение" << endl;
+        cout << "2)Корректность выражения" << endl;
+        cout << "3)Вычислить выражение" << endl;
+        cout << "Выбирите действие(0 - выход): ";
+        cin >> choice;
+        switch (choice) {
+        case 1:
+        {
+            cout << "Напишите выражение: ";
+            cin.ignore();
+            getline(cin, expression);
+            string result = toPostfix(expression);
+            string result2 = toPrefix(expression);
+            cout << "Обратная польская нотация : " << result << endl;
+            cout << "Прямая польская нотация: " << result2 << endl;
+            _getch();
+            break;
+        }
+        case 2:
+        {
+            int notation;
+            cout << "1)Обратная нотация" << endl;
+            cout << "2)Прямая нотация" << endl;
+            cout << "Выбери действие: ";
+            cin >> notation;
+            switch (notation) {
+            case 1: {
+                cout << "Напишите выражение: " << endl;
+                cin.ignore();
+                getline(cin, expression);
+                bool ans = calculatePostfix(expression);
+                if (ans == 0)
+                    cout << "Результат: Некорректно " << endl;
+                else
+                    cout << "Результат: Корректно " << endl;
+                break;
+            }
+            case 2: {
+                cout << "Напишите выражение: " << endl;
+                cin.ignore();
+                getline(cin, expression);
+                bool ans = calculatePrefix(expression);
+                if (ans == 0)
+                    cout << "Результат: Некорректно " << endl;
+                else
+                    cout << "Результат: Корректно" << endl;
+                break;
+            }
+            }
+            _getch();
+            break;
+        }
+        case 3:
+        {
+            int notation;
+            cout << "1)Обратная нотация" << endl;
+            cout << "2)Прямая нотация" << endl;
+            cout << "Выбери действие: ";
+            cin >> notation;
+            switch (notation) {
+            case 1: {
+                cout << "Напишите выражение: " << endl;
+                cin.ignore();
+                getline(cin, expression);
+                double ans = calculatePostfix(expression);
+                cout << "Результат: " << ans << endl;
+                break;
+            }
+            case 2: {
+                cout << "Напишите выражение: " << endl;
+                cin.ignore();
+                getline(cin, expression);
+                double ans = calculatePrefix(expression);
+                cout << "Результат: " << ans << endl;
+                break;
+            }
+            }
+            _getch();
+            break;
+
+        }
+        default:
+        {
+            cout << "Wrong input" << endl;
+        }
+        }
+    } while (choice != 0);
+    return 0;
+}
